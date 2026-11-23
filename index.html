@@ -39,26 +39,9 @@
       outline: none;
     }
 
-    .hint {
-      position: fixed;
-      left: 50%;
-      bottom: max(18px, env(safe-area-inset-bottom));
-      transform: translateX(-50%);
-      padding: 10px 15px;
-      border: 1px solid rgba(221, 201, 255, .2);
-      border-radius: 999px;
-      background: rgba(13, 8, 21, .7);
-      color: rgba(247, 243, 255, .82);
-      font-size: 12px;
-      letter-spacing: .035em;
-      white-space: nowrap;
-      pointer-events: none;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-    }
-
     .status {
       position: fixed;
+      z-index: 2;
       top: max(16px, env(safe-area-inset-top));
       left: 16px;
       max-width: min(80vw, 360px);
@@ -69,9 +52,126 @@
       pointer-events: none;
     }
 
+    .bottom-ui {
+      position: fixed;
+      z-index: 3;
+      left: 50%;
+      bottom: calc(max(18px, env(safe-area-inset-bottom)) + 50px);
+      width: min(100% - 24px, 560px);
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .character-select {
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      flex-wrap: wrap;
+      gap: 7px;
+      max-width: 100%;
+      padding: 6px;
+      border: 1px solid rgba(221, 201, 255, .2);
+      border-radius: 22px;
+      background: rgba(13, 8, 21, .78);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      pointer-events: auto;
+    }
+
+    .character-button {
+      min-height: 44px;
+      min-width: 88px;
+      padding: 6px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      border: 1px solid transparent;
+      border-radius: 15px;
+      background: rgba(255, 255, 255, .035);
+      color: rgba(247, 243, 255, .9);
+      font: inherit;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .character-button[aria-pressed="true"] {
+      border-color: rgba(194, 128, 255, .62);
+      background: rgba(133, 57, 194, .22);
+      box-shadow: 0 0 18px rgba(169, 76, 255, .13);
+    }
+
+    .character-button.coming-soon {
+      color: rgba(222, 212, 236, .58);
+    }
+
+    .character-name {
+      font-size: 12px;
+      line-height: 1.1;
+      letter-spacing: .035em;
+      white-space: nowrap;
+    }
+
+    .character-note {
+      font-size: 9px;
+      line-height: 1.1;
+      letter-spacing: .04em;
+      color: rgba(212, 193, 233, .52);
+      white-space: nowrap;
+    }
+
+    .hint {
+      padding: 9px 14px;
+      border: 1px solid rgba(221, 201, 255, .2);
+      border-radius: 999px;
+      background: rgba(13, 8, 21, .74);
+      color: rgba(247, 243, 255, .82);
+      font-size: 12px;
+      letter-spacing: .035em;
+      white-space: nowrap;
+      pointer-events: none;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    @media (max-width: 360px) {
+      .bottom-ui {
+        width: calc(100% - 14px);
+        gap: 6px;
+      }
+
+      .character-select {
+        gap: 4px;
+        padding: 4px;
+      }
+
+      .character-button {
+        min-width: 82px;
+        padding-inline: 8px;
+      }
+
+      .character-name { font-size: 11px; }
+      .hint { font-size: 11px; padding: 8px 12px; }
+    }
+
     @media (min-width: 700px) {
-      .hint { font-size: 13px; bottom: 24px; }
       .status { top: 22px; left: 22px; }
+      .bottom-ui {
+        bottom: 22px;
+        gap: 9px;
+      }
+
+      .character-select { gap: 9px; padding: 7px; }
+      .character-button { min-width: 112px; padding-inline: 16px; }
+      .character-name { font-size: 13px; }
+      .character-note { font-size: 10px; }
+      .hint { font-size: 13px; }
     }
   </style>
 
@@ -87,8 +187,26 @@
 </head>
 <body>
   <canvas id="scene" aria-label="Interactive 3D anime character creator scene"></canvas>
-  <div class="status" id="status">Fractured Grid · Character Creator</div>
-  <div class="hint">Drag to spin · pinch or scroll to zoom</div>
+  <div class="status" id="status">Fractured Grid · ECHO-7</div>
+
+  <div class="bottom-ui">
+    <nav class="character-select" aria-label="Character selection">
+      <button class="character-button" type="button" data-character="echo7" aria-pressed="true">
+        <span class="character-name">ECHO-7</span>
+        <span class="character-note">Selected</span>
+      </button>
+      <button class="character-button coming-soon" type="button" data-character="trynix" aria-pressed="false">
+        <span class="character-name">Trynix</span>
+        <span class="character-note">Coming soon</span>
+      </button>
+      <button class="character-button coming-soon" type="button" data-character="create" aria-pressed="false">
+        <span class="character-name">Create Your Own</span>
+        <span class="character-note">Coming soon</span>
+      </button>
+    </nav>
+    <div class="hint">Drag to spin · pinch or scroll to zoom</div>
+  </div>
+
   <script type="module" src="./src/main.js"></script>
 </body>
 </html>
