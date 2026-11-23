@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#090610">
+  <title>Fractured Grid Character Creator</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #090610;
+      color: #f7f3ff;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    body {
+      background:
+        radial-gradient(ellipse at 50% 46%, rgba(92, 45, 133, .24), transparent 43%),
+        radial-gradient(ellipse at 50% 100%, rgba(33, 14, 50, .32), transparent 58%),
+        #090610;
+    }
+
+    #scene {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none;
+      outline: none;
+    }
+
+    .hint {
+      position: fixed;
+      left: 50%;
+      bottom: max(18px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      padding: 10px 15px;
+      border: 1px solid rgba(221, 201, 255, .2);
+      border-radius: 999px;
+      background: rgba(13, 8, 21, .7);
+      color: rgba(247, 243, 255, .82);
+      font-size: 12px;
+      letter-spacing: .035em;
+      white-space: nowrap;
+      pointer-events: none;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .status {
+      position: fixed;
+      top: max(16px, env(safe-area-inset-top));
+      left: 16px;
+      max-width: min(80vw, 360px);
+      color: rgba(230, 217, 255, .74);
+      font-size: 11px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+
+    @media (min-width: 700px) {
+      .hint { font-size: 13px; bottom: 24px; }
+      .status { top: 22px; left: 22px; }
+    }
+  </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+        "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3.5.5/lib/three-vrm.module.min.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <canvas id="scene" aria-label="Interactive 3D anime character creator scene"></canvas>
+  <div class="status" id="status">Fractured Grid · Character Creator</div>
+  <div class="hint">Drag to spin · pinch or scroll to zoom</div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
