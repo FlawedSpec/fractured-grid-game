@@ -1,45 +1,36 @@
 import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { VRMLoaderPlugin, VRMUtils } from "@pixiv/three-vrm";
+import { createEcho7 } from "./echo7.js";
 import {
-  OrbitControls
-} from "three/addons/controls/OrbitControls.js";
-import {
-  GLTFLoader
-} from "three/addons/loaders/GLTFLoader.js";
-import {
-  VRMLoaderPlugin,
-  VRMUtils
-} from "@pixiv/three-vrm";
-import {
-  createEcho7
-} from "./echo7.js";
-import {
-  DEFAULT_CUSTOM_LOOK,
-  HAIR_COLOR_PRESETS,
-  HAIRSTYLE_PRESETS,
-  SKIN_TONE_PRESETS,
-  createCustomFigure,
-  applyCustomLook,
-  loadCustomLook,
-  saveCustomLook,
-  randomCustomLook
+  DEFAULT_CUSTOM_LOOK, HAIR_COLOR_PRESETS, HAIRSTYLE_PRESETS, SKIN_TONE_PRESETS,
+  createCustomFigure, applyCustomLook, loadCustomLook, saveCustomLook, randomCustomLook
 } from "./custom.js";
+import { createWorld } from "./world.js";
+
 const canvas = document.querySelector("#scene");
 const status = document.querySelector("#status");
 const editor = document.querySelector("#editor-panel");
 const toggleEditor = document.querySelector("#editor-toggle");
 const nameInput = document.querySelector("#name-input");
 const bodyElement = document.body;
+const enterButton = document.querySelector("#enter-world");
+const backButton = document.querySelector("#back-creator");
+const worldHud = document.querySelector("#world-hud");
+const worldCharacter = document.querySelector("#world-character");
+const worldHint = document.querySelector("#world-hint");
+const joystick = document.querySelector("#joystick");
+const joystickBase = document.querySelector("#joystick-base");
+const joystickStick = document.querySelector("#joystick-stick");
+const bottomUI = document.querySelector("#bottom-ui");
+
 const scene = new THREE.Scene();
 scene.background = new THREE.Color("#090610");
 scene.fog = new THREE.FogExp2("#11091b", 0.035);
 const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 80);
 camera.position.set(0, 2.35, 7.2);
-const renderer = new THREE.WebGLRenderer({
-  canvas,
-  antialias: true,
-  alpha: false,
-  powerPreference: "high-performance"
-});
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.setSize(window.innerWidth, window.innerHeight, false);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -47,6 +38,7 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.12;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.065;
@@ -61,22 +53,18 @@ controls.maxPolarAngle = Math.PI * 0.49;
 controls.target.set(0, 1.55, 0);
 controls.touches.ONE = THREE.TOUCH.ROTATE;
 controls.touches.TWO = THREE.TOUCH.DOLLY_ROTATE;
-const toonGradient = new THREE.DataTexture(new Uint8Array([72, 65, 100, 255, 126, 116, 157, 255, 190, 183, 211, 255, 245, 242, 255, 255]), 4, 1, THREE.RGBAFormat);
+
+const toonGradient = new THREE.DataTexture(
+  new Uint8Array([72,65,100,255,126,116,157,255,190,183,211,255,245,242,255,255]),
+  4, 1, THREE.RGBAFormat
+);
 toonGradient.magFilter = THREE.NearestFilter;
 toonGradient.minFilter = THREE.NearestFilter;
 toonGradient.generateMipmaps = false;
 toonGradient.needsUpdate = true;
-const makeMaterial = (color, extra = {}) => new THREE.MeshToonMaterial({
-  color,
-  gradientMap: toonGradient,
-  ...extra
-});
-const mats = {
-  line: new THREE.MeshBasicMaterial({
-    color: "#21152f",
-    side: THREE.BackSide
-  })
-};
+const makeMaterial = (color, extra = {}) => new THREE.MeshToonMaterial({ color, gradientMap: toonGradient, ...extra });
+const mats = { line: new THREE.MeshBasicMaterial({ color: "#21152f", side: THREE.BackSide }) };
+
 const hemi = new THREE.HemisphereLight("#e9ddff", "#21152c", 2.0);
 scene.add(hemi);
 const keyLight = new THREE.DirectionalLight("#fff4ff", 3.0);
@@ -94,9 +82,8 @@ scene.add(violetFill);
 const pinkRim = new THREE.PointLight("#c646ff", 15, 8, 2);
 pinkRim.position.set(-2.5, 3.2, -2.5);
 scene.add(pinkRim);
-const floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshBasicMaterial({
-  color: "#0c0812"
-}));
+
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshBasicMaterial({ color: "#0c0812" }));
 floor.rotation.x = -Math.PI / 2;
 floor.position.y = -0.04;
 floor.receiveShadow = true;
@@ -104,33 +91,24 @@ scene.add(floor);
 const platform = new THREE.Group();
 scene.add(platform);
 const disc = new THREE.Mesh(new THREE.CylinderGeometry(1.28, 1.38, 0.18, 96, 1), new THREE.MeshToonMaterial({
-  color: "#21152e",
-  gradientMap: toonGradient,
-  emissive: "#270d3b",
-  emissiveIntensity: 0.55
+  color: "#21152e", gradientMap: toonGradient, emissive: "#270d3b", emissiveIntensity: 0.55
 }));
 disc.position.y = 0.09;
 disc.castShadow = true;
 disc.receiveShadow = true;
 platform.add(disc);
-const discTop = new THREE.Mesh(new THREE.CircleGeometry(1.24, 96), new THREE.MeshBasicMaterial({
-  color: "#160f20"
-}));
+const discTop = new THREE.Mesh(new THREE.CircleGeometry(1.24, 96), new THREE.MeshBasicMaterial({ color: "#160f20" }));
 discTop.rotation.x = -Math.PI / 2;
 discTop.position.y = 0.185;
 platform.add(discTop);
 const ring = new THREE.Mesh(new THREE.TorusGeometry(1.25, 0.026, 8, 128), new THREE.MeshBasicMaterial({
-  color: "#d15cff",
-  transparent: true,
-  opacity: 0.95
+  color: "#d15cff", transparent: true, opacity: 0.95
 }));
 ring.rotation.x = Math.PI / 2;
 ring.position.y = 0.205;
 platform.add(ring);
 const innerRing = new THREE.Mesh(new THREE.TorusGeometry(1.08, 0.008, 6, 128), new THREE.MeshBasicMaterial({
-  color: "#8f44df",
-  transparent: true,
-  opacity: 0.8
+  color: "#8f44df", transparent: true, opacity: 0.8
 }));
 innerRing.rotation.x = Math.PI / 2;
 innerRing.position.y = 0.198;
@@ -140,15 +118,11 @@ grid.position.y = -0.03;
 grid.material.transparent = true;
 grid.material.opacity = 0.18;
 scene.add(grid);
+
 const characterRoot = new THREE.Group();
 characterRoot.position.y = 0.2;
 scene.add(characterRoot);
-const figureOptions = {
-  THREE,
-  toonGradient,
-  mats,
-  makeMaterial
-};
+const figureOptions = { THREE, toonGradient, mats, makeMaterial };
 const echo7 = createEcho7(figureOptions);
 characterRoot.add(echo7);
 const customFigure = createCustomFigure(figureOptions);
@@ -156,6 +130,7 @@ const initialLook = loadCustomLook();
 applyCustomLook(customFigure, initialLook);
 characterRoot.add(customFigure);
 customFigure.visible = false;
+
 let currentVrm = null;
 let vrmWrapper = null;
 let selectedCharacter = "echo7";
@@ -164,35 +139,22 @@ let statusTimer = 0;
 let editorExpanded = false;
 
 function statusForSelection() {
-  if (selectedCharacter === "create") {
-    const name = customLook.name.trim();
-    return `Fractured Grid · ${name || "Custom"}`;
-  }
+  if (selectedCharacter === "create") return `Fractured Grid · ${customLook.name.trim() || "Custom"}`;
   return "Fractured Grid · ECHO-7";
 }
-
-function refreshStatus() {
-  status.textContent = statusForSelection();
-}
+function refreshStatus() { status.textContent = statusForSelection(); }
 
 function updateControlState() {
-  for (const group of document.querySelectorAll("[data-choice-group]")) {
+  document.querySelectorAll("[data-choice-group]").forEach((group) => {
     const key = group.dataset.choiceGroup;
     group.querySelectorAll("[data-value]").forEach((button) => {
       button.setAttribute("aria-pressed", button.dataset.value === customLook[key] ? "true" : "false");
     });
-  }
-  const colorFields = [
-    ["hair-color", "hairColor"],
-    ["eye-color", "eyeColor"],
-    ["skin-color", "skinTone"],
-    ["outfit-primary", "outfitPrimary"],
-    ["outfit-accent", "outfitAccent"],
-    ["glow-color", "glowColor"]
-  ];
-  for (const [id, key] of colorFields) {
-    document.getElementById(id).value = customLook[key];
-  }
+  });
+  for (const [id, key] of [
+    ["hair-color", "hairColor"], ["eye-color", "eyeColor"], ["skin-color", "skinTone"],
+    ["outfit-primary", "outfitPrimary"], ["outfit-accent", "outfitAccent"], ["glow-color", "glowColor"]
+  ]) document.getElementById(id).value = customLook[key];
   nameInput.value = customLook.name;
   document.querySelectorAll("[data-swatch-type]").forEach((button) => {
     const key = button.dataset.swatchType === "hair" ? "hairColor" : "skinTone";
@@ -224,8 +186,7 @@ function createSwatches(container, presets, type) {
     button.title = preset.name;
     button.setAttribute("aria-pressed", "false");
     button.addEventListener("click", () => {
-      const key = type === "hair" ? "hairColor" : "skinTone";
-      customLook[key] = preset.color;
+      customLook[type === "hair" ? "hairColor" : "skinTone"] = preset.color;
       updateControlState();
       persistLook();
     });
@@ -243,27 +204,21 @@ function persistLook() {
   if (selectedCharacter === "create") refreshStatus();
 }
 updateControlState();
-for (const group of document.querySelectorAll("[data-choice-group]")) {
+document.querySelectorAll("[data-choice-group]").forEach((group) => {
   group.addEventListener("click", (event) => {
     const button = event.target.closest("[data-value]");
     if (!button) return;
     customLook[group.dataset.choiceGroup] = button.dataset.value;
     persistLook();
   });
-}
+});
 for (const [id, key] of [
-    ["hair-color", "hairColor"],
-    ["eye-color", "eyeColor"],
-    ["skin-color", "skinTone"],
-    ["outfit-primary", "outfitPrimary"],
-    ["outfit-accent", "outfitAccent"],
-    ["glow-color", "glowColor"]
-  ]) {
-  document.getElementById(id).addEventListener("input", (event) => {
-    customLook[key] = event.target.value;
-    persistLook();
-  });
-}
+  ["hair-color", "hairColor"], ["eye-color", "eyeColor"], ["skin-color", "skinTone"],
+  ["outfit-primary", "outfitPrimary"], ["outfit-accent", "outfitAccent"], ["glow-color", "glowColor"]
+]) document.getElementById(id).addEventListener("input", (event) => {
+  customLook[key] = event.target.value;
+  persistLook();
+});
 nameInput.addEventListener("input", () => {
   customLook.name = nameInput.value.slice(0, 16);
   saveCustomLook(customLook);
@@ -276,9 +231,7 @@ document.querySelector("#randomize").addEventListener("click", () => {
   persistLook();
 });
 document.querySelector("#reset-look").addEventListener("click", () => {
-  customLook = {
-    ...DEFAULT_CUSTOM_LOOK
-  };
+  customLook = { ...DEFAULT_CUSTOM_LOOK };
   nameInput.value = customLook.name;
   persistLook();
 });
@@ -315,19 +268,11 @@ function setSelectedCharacter(character) {
   const visible = showingCustom;
   editor.dataset.visible = visible ? "true" : "false";
   editor.setAttribute("aria-hidden", visible ? "false" : "true");
-  if (visible) {
-    const wide = window.matchMedia("(min-width: 700px)").matches;
-    setEditorExpanded(wide ? true : editorExpanded);
-  } else {
-    setEditorExpanded(false);
-  }
+  if (visible) setEditorExpanded(window.matchMedia("(min-width: 700px)").matches || editorExpanded);
+  else setEditorExpanded(false);
   window.clearTimeout(statusTimer);
   refreshStatus();
-  try {
-    localStorage.setItem("fractured-grid-selected-character", character);
-  } catch {
-    /* Storage may be blocked; the current session still works. */
-  }
+  try { localStorage.setItem("fractured-grid-selected-character", character); } catch { /* Storage may be blocked. */ }
 }
 for (const button of characterButtons) {
   button.addEventListener("click", () => {
@@ -373,41 +318,61 @@ async function loadVrmFromQuery() {
     refreshStatus();
   }
 }
+
+const world = createWorld({
+  THREE, scene, camera, controls, renderer, toonGradient, makeMaterial, characterRoot,
+  creatorObjects: [platform, floor, grid],
+  ui: { enterButton, backButton, hud: worldHud, hudHint: worldHint, joystick, joystickBase, stick: joystickStick, bottomUI, editor }
+});
+enterButton.addEventListener("click", () => {
+  const figure = selectedCharacter === "create" ? customFigure : echo7;
+  const characterName = selectedCharacter === "create" ? (customLook.name.trim() || "Custom") : "ECHO-7";
+  if (vrmWrapper) vrmWrapper.visible = false;
+  echo7.visible = figure === echo7;
+  customFigure.visible = figure === customFigure;
+  worldCharacter.textContent = characterName;
+  bodyElement.classList.add("world-mode");
+  world.enter({ figure, characterName });
+});
+backButton.addEventListener("click", () => {
+  world.exit();
+  bodyElement.classList.remove("world-mode");
+  setSelectedCharacter(selectedCharacter);
+});
+
 const remembered = (() => {
-  try {
-    return localStorage.getItem("fractured-grid-selected-character");
-  } catch {
-    return null;
-  }
+  try { return localStorage.getItem("fractured-grid-selected-character"); } catch { return null; }
 })();
 setSelectedCharacter(remembered === "create" ? "create" : "echo7");
 await loadVrmFromQuery();
 const clock = new THREE.Clock();
 const initialY = characterRoot.position.y;
-
 function resize() {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setSize(window.innerWidth, window.innerHeight, false);
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
+  world.resize();
 }
-window.addEventListener("resize", resize, {
-  passive: true
-});
+window.addEventListener("resize", resize, { passive: true });
 resize();
 
 function animate() {
   requestAnimationFrame(animate);
   const delta = Math.min(clock.getDelta(), 0.05);
   const time = clock.elapsedTime;
-  if (currentVrm && vrmWrapper?.visible) currentVrm.update(delta);
-  const visibleFigure = selectedCharacter === "create" ? customFigure : echo7;
-  characterRoot.position.y = initialY + Math.sin(time * 1.5) * 0.018;
-  visibleFigure.rotation.y = Math.sin(time * 0.55) * 0.018;
-  visibleFigure.rotation.z = Math.sin(time * 0.75) * 0.006;
-  visibleFigure.scale.y = 1 + Math.sin(time * 2.1) * 0.003;
-  ring.material.opacity = 0.72 + Math.sin(time * 2.1) * 0.2;
-  controls.update();
+  if (world.isActive()) {
+    world.update(delta, time);
+  } else {
+    if (currentVrm && vrmWrapper?.visible) currentVrm.update(delta);
+    const visibleFigure = selectedCharacter === "create" ? customFigure : echo7;
+    characterRoot.position.y = initialY + Math.sin(time * 1.5) * 0.018;
+    visibleFigure.rotation.y = Math.sin(time * 0.55) * 0.018;
+    visibleFigure.rotation.z = Math.sin(time * 0.75) * 0.006;
+    visibleFigure.scale.y = 1 + Math.sin(time * 2.1) * 0.003;
+    ring.material.opacity = 0.72 + Math.sin(time * 2.1) * 0.2;
+    controls.update();
+  }
   renderer.render(scene, camera);
 }
 animate();

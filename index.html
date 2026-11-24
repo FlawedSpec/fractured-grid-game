@@ -1,507 +1,106 @@
 <!doctype html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#090610">
   <title>Fractured Grid Character Creator</title>
   <style>
-    :root {
-      color-scheme: dark;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #090610;
-      color: #f7f3ff;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html,
-    body {
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      overflow: hidden;
-    }
-
-    body {
-      background: radial-gradient(ellipse at 50% 46%, rgba(92, 45, 133, .24), transparent 43%), radial-gradient(ellipse at 50% 100%, rgba(33, 14, 50, .32), transparent 58%), #090610;
-    }
-
-    #scene {
-      position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      display: block;
-      touch-action: none;
-      outline: none;
-    }
-
-    .status {
-      position: fixed;
-      z-index: 2;
-      top: max(16px, env(safe-area-inset-top));
-      left: max(16px, env(safe-area-inset-left));
-      max-width: min(80vw, 360px);
-      color: rgba(230, 217, 255, .74);
-      font-size: 11px;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      pointer-events: none;
-    }
-
-    .bottom-ui {
-      position: fixed;
-      z-index: 3;
-      left: 50%;
-      bottom: calc(max(16px, env(safe-area-inset-bottom)) + 48px);
-      width: min(100% - 24px, 560px);
-      transform: translateX(-50%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 7px;
-      pointer-events: none;
-      transition: bottom .2s ease;
-    }
-
-    .character-select {
-      display: flex;
-      justify-content: center;
-      align-items: stretch;
-      flex-wrap: wrap;
-      gap: 6px;
-      max-width: 100%;
-      padding: 5px;
-      border: 1px solid rgba(221, 201, 255, .2);
-      border-radius: 22px;
-      background: rgba(13, 8, 21, .8);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      pointer-events: auto;
-    }
-
-    .character-button,
-    .editor-button,
-    .choice-button,
-    .swatch {
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .character-button {
-      min-height: 44px;
-      min-width: 88px;
-      padding: 6px 12px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 2px;
-      border: 1px solid transparent;
-      border-radius: 15px;
-      background: rgba(255, 255, 255, .035);
-      color: rgba(247, 243, 255, .9);
-      font: inherit;
-      cursor: pointer;
-    }
-
-    .character-button[aria-pressed="true"],
-    .choice-button[aria-pressed="true"] {
-      border-color: rgba(194, 128, 255, .66);
-      background: rgba(133, 57, 194, .24);
-      box-shadow: 0 0 18px rgba(169, 76, 255, .14);
-    }
-
-    .character-button.coming-soon {
-      color: rgba(222, 212, 236, .58);
-    }
-
-    .character-name {
-      font-size: 12px;
-      line-height: 1.1;
-      letter-spacing: .035em;
-      white-space: nowrap;
-    }
-
-    .character-note {
-      font-size: 9px;
-      line-height: 1.1;
-      letter-spacing: .04em;
-      color: rgba(212, 193, 233, .62);
-      white-space: nowrap;
-    }
-
-    .hint {
-      padding: 8px 13px;
-      border: 1px solid rgba(221, 201, 255, .2);
-      border-radius: 999px;
-      background: rgba(13, 8, 21, .76);
-      color: rgba(247, 243, 255, .82);
-      font-size: 12px;
-      letter-spacing: .035em;
-      white-space: nowrap;
-      pointer-events: none;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-    }
-
-    .editor-panel {
-      position: fixed;
-      z-index: 4;
-      left: max(10px, env(safe-area-inset-left));
-      right: max(10px, env(safe-area-inset-right));
-      bottom: max(10px, env(safe-area-inset-bottom));
-      max-height: 43dvh;
-      display: none;
-      flex-direction: column;
-      overflow: hidden;
-      border: 1px solid rgba(221, 201, 255, .24);
-      border-radius: 20px;
-      background: rgba(13, 8, 21, .94);
-      box-shadow: 0 12px 44px rgba(0, 0, 0, .38);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      pointer-events: auto;
-    }
-
-    .editor-panel[data-visible="true"] {
-      display: flex;
-    }
-
-    .editor-panel[data-open="false"] .editor-body {
-      display: none;
-    }
-
-
-    .editor-header {
-      min-height: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 5px 12px;
-      border-bottom: 1px solid rgba(221, 201, 255, .12);
-    }
-
-    .editor-title {
-      margin: 0;
-      font-size: 13px;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-    }
-
-    .editor-button {
-      min-width: 76px;
-      min-height: 44px;
-      padding: 7px 13px;
-      border: 1px solid rgba(221, 201, 255, .23);
-      border-radius: 12px;
-      background: rgba(255, 255, 255, .06);
-      color: #f7f3ff;
-      font: inherit;
-      cursor: pointer;
-    }
-
-    .editor-body {
-      overflow-y: auto;
-      overscroll-behavior: contain;
-      padding: 10px 12px max(14px, env(safe-area-inset-bottom));
-      scrollbar-color: rgba(182, 123, 232, .45) transparent;
-    }
-
-    .control-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px 12px;
-    }
-
-    .control {
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-
-    .control.full {
-      grid-column: 1 / -1;
-    }
-
-    .control-label {
-      color: rgba(241, 231, 255, .82);
-      font-size: 11px;
-      letter-spacing: .04em;
-    }
-
-    .text-input {
-      width: 100%;
-      min-height: 44px;
-      padding: 9px 11px;
-      border: 1px solid rgba(221, 201, 255, .2);
-      border-radius: 11px;
-      outline: none;
-      background: rgba(255, 255, 255, .055);
-      color: #fff;
-      font: inherit;
-    }
-
-    .text-input:focus,
-    .color-input:focus-visible,
-    button:focus-visible {
-      outline: 2px solid rgba(195, 131, 255, .72);
-      outline-offset: 2px;
-    }
-
-    .choices,
-    .swatches,
-    .actions {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .choices {
-      flex-wrap: wrap;
-    }
-
-    .choices.scroll-row,
-    .swatches.scroll-row {
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      padding: 3px 2px 6px;
-      scrollbar-width: thin;
-      overscroll-behavior-x: contain;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .choice-button {
-      flex: 0 0 auto;
-      min-width: 48px;
-      min-height: 44px;
-      padding: 7px 10px;
-      border: 1px solid rgba(221, 201, 255, .17);
-      border-radius: 11px;
-      background: rgba(255, 255, 255, .04);
-      color: rgba(247, 243, 255, .85);
-      font: inherit;
-      font-size: 11px;
-      text-transform: capitalize;
-      cursor: pointer;
-    }
-
-    .swatch {
-      flex: 0 0 44px;
-      width: 44px;
-      height: 44px;
-      min-height: 44px;
-      padding: 0;
-      border: 2px solid rgba(255, 255, 255, .27);
-      border-radius: 50%;
-      background: var(--swatch);
-      cursor: pointer;
-    }
-
-    .swatch[aria-pressed="true"] {
-      outline: 2px solid #f7f0ff;
-      outline-offset: 2px;
-    }
-
-    .color-row {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      min-width: 0;
-    }
-
-    .color-row .swatches {
-      min-width: 0;
-      flex: 1;
-    }
-
-    .color-input {
-      flex: 0 0 48px;
-      width: 48px;
-      height: 44px;
-      padding: 3px;
-      border: 1px solid rgba(221, 201, 255, .2);
-      border-radius: 10px;
-      background: rgba(255, 255, 255, .055);
-      cursor: pointer;
-    }
-
-    .actions {
-      padding-top: 3px;
-    }
-
-    .actions .editor-button {
-      flex: 1;
-    }
-
-    @media (max-width: 390px) {
-      .bottom-ui {
-        width: calc(100% - 14px);
-        gap: 5px;
-      }
-
-      .character-select {
-        gap: 3px;
-        padding: 4px;
-      }
-
-      .character-button {
-        min-width: 80px;
-        padding-inline: 7px;
-      }
-
-      .character-name {
-        font-size: 11px;
-      }
-
-      .hint {
-        font-size: 11px;
-        padding: 7px 10px;
-      }
-
-      .control-grid {
-        gap: 8px;
-      }
-
-      .editor-body {
-        padding-inline: 10px;
-      }
-
-      .choice-button {
-        padding-inline: 8px;
-      }
-    }
-
-    @media (max-width: 699px) {
-      body.editor-expanded .bottom-ui {
-        bottom: calc(max(10px, env(safe-area-inset-bottom)) + 43dvh + 6px);
-      }
-
-      body.editor-expanded .hint {
-        display: none;
-      }
-
-      body.editor-collapsed .bottom-ui {
-        bottom: calc(max(10px, env(safe-area-inset-bottom)) + 48px);
-      }
-    }
-
-    @media (min-width: 700px) {
-      .status {
-        top: 22px;
-        left: 22px;
-      }
-
-      .bottom-ui {
-        bottom: 22px;
-        gap: 8px;
-      }
-
-      .character-select {
-        gap: 9px;
-        padding: 7px;
-      }
-
-      .character-button {
-        min-width: 112px;
-        padding-inline: 16px;
-      }
-
-      .character-name {
-        font-size: 13px;
-      }
-
-      .character-note {
-        font-size: 10px;
-      }
-
-      .hint {
-        font-size: 13px;
-      }
-
-      .editor-panel {
-        top: max(18px, env(safe-area-inset-top));
-        right: max(18px, env(safe-area-inset-right));
-        bottom: 18px;
-        left: auto;
-        width: min(370px, 38vw);
-        max-height: none;
-        border-radius: 22px;
-      }
-
-      .editor-panel[data-open="false"] {
-        bottom: auto;
-        height: auto;
-      }
-
-      .editor-header {
-        min-height: 54px;
-        padding-inline: 15px;
-      }
-
-      .editor-body {
-        padding: 13px 15px 18px;
-      }
-
-      .control-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
-      }
-
-      .control.full {
-        grid-column: auto;
-      }
-
-    }
-
+    :root { color-scheme: dark; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background:#090610; color:#f7f3ff; }
+    * { box-sizing:border-box; }
+    html,body { width:100%; height:100%; margin:0; overflow:hidden; }
+    body { background:radial-gradient(ellipse at 50% 46%,rgba(92,45,133,.24),transparent 43%),radial-gradient(ellipse at 50% 100%,rgba(33,14,50,.32),transparent 58%),#090610; }
+    #scene { position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; outline:none; }
+    .status { position:fixed; z-index:2; top:max(16px,env(safe-area-inset-top)); left:max(16px,env(safe-area-inset-left)); max-width:min(80vw,360px); color:rgba(230,217,255,.74); font-size:11px; letter-spacing:.12em; text-transform:uppercase; pointer-events:none; }
+    .bottom-ui { position:fixed; z-index:3; left:50%; bottom:calc(max(16px,env(safe-area-inset-bottom)) + 76px); width:min(100% - 24px,560px); transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; gap:7px; pointer-events:none; transition:bottom .2s ease; }
+    .character-select { display:flex; justify-content:center; align-items:stretch; flex-wrap:wrap; gap:6px; max-width:100%; padding:5px; border:1px solid rgba(221,201,255,.2); border-radius:22px; background:rgba(13,8,21,.8); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); pointer-events:auto; }
+    .character-button,.editor-button,.choice-button,.swatch,.world-button { touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+    .character-button { min-height:44px; min-width:88px; padding:6px 12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; border:1px solid transparent; border-radius:15px; background:rgba(255,255,255,.035); color:rgba(247,243,255,.9); font:inherit; cursor:pointer; }
+    .character-button[aria-pressed="true"],.choice-button[aria-pressed="true"] { border-color:rgba(194,128,255,.66); background:rgba(133,57,194,.24); box-shadow:0 0 18px rgba(169,76,255,.14); }
+    .character-button.coming-soon { color:rgba(222,212,236,.58); }
+    .character-name { font-size:12px; line-height:1.1; letter-spacing:.035em; white-space:nowrap; }
+    .character-note { font-size:9px; line-height:1.1; letter-spacing:.04em; color:rgba(212,193,233,.62); white-space:nowrap; }
+    .hint { padding:8px 13px; border:1px solid rgba(221,201,255,.2); border-radius:999px; background:rgba(13,8,21,.76); color:rgba(247,243,255,.82); font-size:12px; letter-spacing:.035em; white-space:nowrap; pointer-events:none; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
+    .editor-panel { position:fixed; z-index:4; left:max(10px,env(safe-area-inset-left)); right:max(10px,env(safe-area-inset-right)); bottom:max(10px,env(safe-area-inset-bottom)); max-height:43dvh; display:none; flex-direction:column; overflow:hidden; border:1px solid rgba(221,201,255,.24); border-radius:20px; background:rgba(13,8,21,.94); box-shadow:0 12px 44px rgba(0,0,0,.38); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); pointer-events:auto; }
+    .editor-panel[data-visible="true"] { display:flex; }
+    .editor-panel[data-open="false"] .editor-body { display:none; }
+    .editor-header { min-height:48px; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:5px 12px; border-bottom:1px solid rgba(221,201,255,.12); }
+    .editor-title { margin:0; font-size:13px; letter-spacing:.08em; text-transform:uppercase; }
+    .editor-button { min-width:76px; min-height:44px; padding:7px 13px; border:1px solid rgba(221,201,255,.23); border-radius:12px; background:rgba(255,255,255,.06); color:#f7f3ff; font:inherit; cursor:pointer; }
+    .editor-body { overflow-y:auto; overscroll-behavior:contain; padding:10px 12px max(14px,env(safe-area-inset-bottom)); scrollbar-color:rgba(182,123,232,.45) transparent; }
+    .control-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 12px; }
+    .control { min-width:0; display:flex; flex-direction:column; gap:5px; }
+    .control.full { grid-column:1 / -1; }
+    .control-label { color:rgba(241,231,255,.82); font-size:11px; letter-spacing:.04em; }
+    .text-input { width:100%; min-height:44px; padding:9px 11px; border:1px solid rgba(221,201,255,.2); border-radius:11px; outline:none; background:rgba(255,255,255,.055); color:#fff; font:inherit; }
+    .text-input:focus,.color-input:focus-visible,button:focus-visible { outline:2px solid rgba(195,131,255,.72); outline-offset:2px; }
+    .choices,.swatches,.actions { display:flex; align-items:center; gap:6px; }
+    .choices { flex-wrap:wrap; }
+    .choices.scroll-row,.swatches.scroll-row { flex-wrap:nowrap; overflow-x:auto; padding:3px 2px 6px; scrollbar-width:thin; overscroll-behavior-x:contain; -webkit-overflow-scrolling:touch; }
+    .choice-button { flex:0 0 auto; min-width:48px; min-height:44px; padding:7px 10px; border:1px solid rgba(221,201,255,.17); border-radius:11px; background:rgba(255,255,255,.04); color:rgba(247,243,255,.85); font:inherit; font-size:11px; text-transform:capitalize; cursor:pointer; }
+    .swatch { flex:0 0 44px; width:44px; height:44px; min-height:44px; padding:0; border:2px solid rgba(255,255,255,.27); border-radius:50%; background:var(--swatch); cursor:pointer; }
+    .swatch[aria-pressed="true"] { outline:2px solid #f7f0ff; outline-offset:2px; }
+    .color-row { display:flex; align-items:center; gap:9px; min-width:0; }
+    .color-row .swatches { min-width:0; flex:1; }
+    .color-input { flex:0 0 48px; width:48px; height:44px; padding:3px; border:1px solid rgba(221,201,255,.2); border-radius:10px; background:rgba(255,255,255,.055); cursor:pointer; }
+    .actions { padding-top:3px; }
+    .actions .editor-button { flex:1; }
+    .world-button { position:fixed; z-index:5; min-height:48px; padding:10px 16px; border:1px solid rgba(221,201,255,.28); border-radius:15px; background:rgba(13,8,21,.82); color:#f7f3ff; font:inherit; letter-spacing:.03em; backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); cursor:pointer; pointer-events:auto; }
+    .world-button:hover { border-color:rgba(194,128,255,.8); background:rgba(85,38,125,.72); }
+    #enter-world { right:max(14px,env(safe-area-inset-right)); bottom:calc(max(16px,env(safe-area-inset-bottom)) + 18px); }
+    #back-creator { top:max(16px,env(safe-area-inset-top)); right:max(16px,env(safe-area-inset-right)); }
+    .world-hud { position:fixed; z-index:5; top:max(16px,env(safe-area-inset-top)); left:max(16px,env(safe-area-inset-left)); display:none; flex-direction:column; gap:4px; padding:11px 14px; border:1px solid rgba(221,201,255,.22); border-radius:14px; background:rgba(13,8,21,.76); color:#e8d7ff; font-size:12px; letter-spacing:.04em; pointer-events:none; backdrop-filter:blur(10px); }
+    .world-hud strong { font-size:13px; font-weight:600; }
+    .world-hint { opacity:1; transition:opacity 1s ease; }
+    .world-hint.fade { opacity:0; }
+    .joystick { position:fixed; z-index:6; left:max(18px,env(safe-area-inset-left)); bottom:max(20px,env(safe-area-inset-bottom)); width:124px; height:124px; display:none; align-items:center; justify-content:center; border:1px solid rgba(194,128,255,.42); border-radius:50%; background:rgba(24,14,37,.48); touch-action:none; pointer-events:auto; }
+    .joystick-base { width:92px; height:92px; display:grid; place-items:center; border:1px solid rgba(221,201,255,.25); border-radius:50%; background:rgba(22,13,33,.56); pointer-events:none; }
+    .joystick-stick { width:48px; height:48px; border:1px solid rgba(228,201,255,.6); border-radius:50%; background:rgba(147,68,208,.68); box-shadow:0 0 18px rgba(154,67,232,.35); pointer-events:none; }
+    body.world-mode .bottom-ui,body.world-mode .status,body.world-mode .editor-panel,body.world-mode #enter-world { display:none !important; }
+    body.world-mode #back-creator,body.world-mode .world-hud { display:flex; }
+    body.world-mode .joystick { display:flex; }
+    [hidden] { display:none !important; }
+    @media(max-width:390px) { .bottom-ui { width:calc(100% - 14px); gap:5px; } .character-select { gap:3px; padding:4px; } .character-button { min-width:80px; padding-inline:7px; } .character-name { font-size:11px; } .hint { font-size:11px; padding:7px 10px; } .control-grid { gap:8px; } .editor-body { padding-inline:10px; } .choice-button { padding-inline:8px; } }
+    @media(max-width:699px) { body.editor-expanded .bottom-ui { bottom:calc(max(10px,env(safe-area-inset-bottom)) + 43dvh + 6px); } body.editor-expanded .hint { display:none; } body.editor-collapsed .bottom-ui { bottom:calc(max(10px,env(safe-area-inset-bottom)) + 76px); } body.editor-expanded #enter-world { bottom:calc(max(10px,env(safe-area-inset-bottom)) + 43dvh + 8px); } }
+    @media(min-width:700px) { body.editor-expanded #enter-world { right:calc(min(370px,38vw) + 32px); bottom:22px; } .status { top:22px; left:22px; } .bottom-ui { bottom:22px; gap:8px; } .character-select { gap:9px; padding:7px; } .character-button { min-width:112px; padding-inline:16px; } .character-name { font-size:13px; } .character-note { font-size:10px; } .hint { font-size:13px; } .editor-panel { top:max(18px,env(safe-area-inset-top)); right:max(18px,env(safe-area-inset-right)); bottom:18px; left:auto; width:min(370px,38vw); max-height:none; border-radius:22px; } .editor-panel[data-open="false"] { bottom:auto; height:auto; } .editor-header { min-height:54px; padding-inline:15px; } .editor-body { padding:13px 15px 18px; } .control-grid { grid-template-columns:1fr; gap:12px; } .control.full { grid-column:auto; } }
   </style>
-  <script type="importmap"> { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/", "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3.5.5/lib/three-vrm.module.min.js" } } </script>
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/", "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3.5.5/lib/three-vrm.module.min.js" } }
+  </script>
 </head>
-
-<body class="editor-collapsed"> <canvas id="scene" aria-label="Interactive 3D anime character creator scene"></canvas>
+<body class="editor-collapsed">
+  <canvas id="scene" aria-label="Interactive 3D anime character creator scene"></canvas>
   <div class="status" id="status">Fractured Grid · ECHO-7</div>
   <div class="bottom-ui" id="bottom-ui">
-    <nav class="character-select" aria-label="Character selection"> <button class="character-button" type="button" data-character="echo7" aria-pressed="true"> <span class="character-name">ECHO-7</span> <span class="character-note">Selected</span> </button> <button class="character-button coming-soon" type="button" data-character="trynix" aria-pressed="false"> <span class="character-name">Trynix</span> <span class="character-note">Coming soon</span> </button> <button class="character-button" type="button" data-character="create" aria-pressed="false"> <span class="character-name">Create Your Own</span> <span class="character-note">Customize</span> </button> </nav>
+    <nav class="character-select" aria-label="Character selection">
+      <button class="character-button" type="button" data-character="echo7" aria-pressed="true"><span class="character-name">ECHO-7</span><span class="character-note">Selected</span></button>
+      <button class="character-button coming-soon" type="button" data-character="trynix" aria-pressed="false"><span class="character-name">Trynix</span><span class="character-note">Coming soon</span></button>
+      <button class="character-button" type="button" data-character="create" aria-pressed="false"><span class="character-name">Create Your Own</span><span class="character-note">Customize</span></button>
+    </nav>
     <div class="hint" id="hint">Drag to spin · pinch or scroll to zoom</div>
   </div>
   <section class="editor-panel" id="editor-panel" aria-label="Character editor" data-visible="false" data-open="false">
-    <header class="editor-header">
-      <h2 class="editor-title">Customize character</h2> <button class="editor-button" type="button" id="editor-toggle" aria-expanded="false">Customize</button>
-    </header>
-    <div class="editor-body" id="editor-body">
-      <div class="control-grid"> <label class="control full"> <span class="control-label">Character name</span> <input class="text-input" id="name-input" type="text" maxlength="16" autocomplete="off" placeholder="Custom"> </label>
-        <div class="control full"> <span class="control-label">Hairstyle</span>
-          <div class="choices scroll-row" data-choice-group="hairstyle" id="hairstyle-choices"></div>
-        </div>
-        <label class="control full"> <span class="control-label">Hair color</span>
-          <div class="color-row">
-            <div class="swatches scroll-row" id="hair-swatches" aria-label="Hair color presets"></div> <input class="color-input" id="hair-color" type="color" aria-label="Custom hair color">
-          </div>
-        </label> <label class="control"> <span class="control-label">Eye color</span> <input class="color-input" id="eye-color" type="color" aria-label="Eye color"> </label>
-        <div class="control full"> <span class="control-label">Skin tone</span>
-          <div class="color-row">
-            <div class="swatches scroll-row" id="skin-swatches" aria-label="Skin tone presets"></div> <input class="color-input" id="skin-color" type="color" aria-label="Custom skin tone">
-          </div>
-        </div>
-        <div class="control full"> <span class="control-label">Outfit</span>
-          <div class="choices" data-choice-group="outfit"> <button class="choice-button" type="button" data-value="armor">Armor</button> <button class="choice-button" type="button" data-value="jacket">Jacket</button> <button class="choice-button" type="button" data-value="techwear">Techwear</button> </div>
-        </div> <label class="control"> <span class="control-label">Outfit primary</span> <input class="color-input" id="outfit-primary" type="color" aria-label="Outfit primary color"> </label> <label class="control"> <span class="control-label">Outfit accent</span> <input class="color-input" id="outfit-accent" type="color" aria-label="Outfit accent color"> </label> <label class="control"> <span class="control-label">Glow color</span> <input class="color-input" id="glow-color" type="color" aria-label="Glow color"> </label>
-        <div class="control full"> <span class="control-label">Body build</span>
-          <div class="choices" data-choice-group="build"> <button class="choice-button" type="button" data-value="slim">Slim</button> <button class="choice-button" type="button" data-value="medium">Medium</button> <button class="choice-button" type="button" data-value="athletic">Athletic</button> </div>
-        </div>
-        <div class="control full">
-          <div class="actions"> <button class="editor-button" type="button" id="randomize">Randomize</button> <button class="editor-button" type="button" id="reset-look">Reset</button> </div>
-        </div>
-      </div>
-    </div>
+    <header class="editor-header"><h2 class="editor-title">Customize character</h2><button class="editor-button" type="button" id="editor-toggle" aria-expanded="false">Customize</button></header>
+    <div class="editor-body" id="editor-body"><div class="control-grid">
+      <label class="control full"><span class="control-label">Character name</span><input class="text-input" id="name-input" type="text" maxlength="16" autocomplete="off" placeholder="Custom"></label>
+      <div class="control full"><span class="control-label">Hairstyle</span><div class="choices scroll-row" data-choice-group="hairstyle" id="hairstyle-choices"></div></div>
+      <label class="control full"><span class="control-label">Hair color</span><div class="color-row"><div class="swatches scroll-row" id="hair-swatches" aria-label="Hair color presets"></div><input class="color-input" id="hair-color" type="color" aria-label="Custom hair color"></div></label>
+      <label class="control"><span class="control-label">Eye color</span><input class="color-input" id="eye-color" type="color" aria-label="Eye color"></label>
+      <div class="control full"><span class="control-label">Skin tone</span><div class="color-row"><div class="swatches scroll-row" id="skin-swatches" aria-label="Skin tone presets"></div><input class="color-input" id="skin-color" type="color" aria-label="Custom skin tone"></div></div>
+      <div class="control full"><span class="control-label">Outfit</span><div class="choices" data-choice-group="outfit"><button class="choice-button" type="button" data-value="armor">Armor</button><button class="choice-button" type="button" data-value="jacket">Jacket</button><button class="choice-button" type="button" data-value="techwear">Techwear</button></div></div>
+      <label class="control"><span class="control-label">Outfit primary</span><input class="color-input" id="outfit-primary" type="color" aria-label="Outfit primary color"></label>
+      <label class="control"><span class="control-label">Outfit accent</span><input class="color-input" id="outfit-accent" type="color" aria-label="Outfit accent color"></label>
+      <label class="control"><span class="control-label">Glow color</span><input class="color-input" id="glow-color" type="color" aria-label="Glow color"></label>
+      <div class="control full"><span class="control-label">Body build</span><div class="choices" data-choice-group="build"><button class="choice-button" type="button" data-value="slim">Slim</button><button class="choice-button" type="button" data-value="medium">Medium</button><button class="choice-button" type="button" data-value="athletic">Athletic</button></div></div>
+      <div class="control full"><div class="actions"><button class="editor-button" type="button" id="randomize">Randomize</button><button class="editor-button" type="button" id="reset-look">Reset</button></div></div>
+    </div></div>
   </section>
+  <button class="world-button" id="enter-world" type="button">Enter the Grid</button>
+  <button class="world-button" id="back-creator" type="button" hidden>Back to Creator</button>
+  <aside class="world-hud" id="world-hud" aria-live="polite" hidden>
+    <strong>Neon Plaza · Fractured Grid</strong><span id="world-character">ECHO-7</span><span class="world-hint" id="world-hint">WASD to move</span>
+  </aside>
+  <div class="joystick" id="joystick" aria-label="Movement joystick" hidden><div class="joystick-base" id="joystick-base"><div class="joystick-stick" id="joystick-stick"></div></div></div>
   <script type="module" src="./src/main.js"></script>
 </body>
-
 </html>
