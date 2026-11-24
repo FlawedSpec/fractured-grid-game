@@ -13,8 +13,10 @@ import {
   createEcho7
 } from "./echo7.js";
 import {
-  CUSTOM_STORAGE_KEY,
   DEFAULT_CUSTOM_LOOK,
+  HAIR_COLOR_PRESETS,
+  HAIRSTYLE_PRESETS,
+  SKIN_TONE_PRESETS,
   createCustomFigure,
   applyCustomLook,
   loadCustomLook,
@@ -169,100 +171,83 @@ function statusForSelection() {
   return "Fractured Grid · ECHO-7";
 }
 
-function setStatus(text) {
-  status.textContent = text;
-}
-
-function persistLook() {
-  customLook.name = nameInput.value.slice(0, 16).trim();
-  saveCustomLook(customLook);
-  applyCustomLook(customFigure, customLook);
-  if (selectedCharacter === "create") setStatus(statusForSelection());
+function refreshStatus() {
+  status.textContent = statusForSelection();
 }
 
 function updateControlState() {
   for (const group of document.querySelectorAll("[data-choice-group]")) {
     const key = group.dataset.choiceGroup;
-    for (const button of group.querySelectorAll("[data-value]")) {
+    group.querySelectorAll("[data-value]").forEach((button) => {
       button.setAttribute("aria-pressed", button.dataset.value === customLook[key] ? "true" : "false");
-    }
+    });
   }
-  for (const [id, key] of [
-      ["hair-color", "hairColor"],
-      ["eye-color", "eyeColor"],
-      ["skin-color", "skinTone"],
-      ["outfit-primary", "outfitPrimary"],
-      ["outfit-accent", "outfitAccent"],
-      ["glow-color", "glowColor"]
-    ]) {
+  const colorFields = [
+    ["hair-color", "hairColor"],
+    ["eye-color", "eyeColor"],
+    ["skin-color", "skinTone"],
+    ["outfit-primary", "outfitPrimary"],
+    ["outfit-accent", "outfitAccent"],
+    ["glow-color", "glowColor"]
+  ];
+  for (const [id, key] of colorFields) {
     document.getElementById(id).value = customLook[key];
   }
   nameInput.value = customLook.name;
-  document.querySelectorAll(".skin-swatch").forEach((button) => {
-    button.setAttribute("aria-pressed", button.dataset.color.toLowerCase() === customLook.skinTone.toLowerCase() ? "true" : "false");
+  document.querySelectorAll("[data-swatch-type]").forEach((button) => {
+    const key = button.dataset.swatchType === "hair" ? "hairColor" : "skinTone";
+    button.setAttribute("aria-pressed", button.dataset.color.toLowerCase() === customLook[key].toLowerCase() ? "true" : "false");
   });
 }
-const skinPresets = [{
-  label: "Porcelain",
-  color: "#f6dfd2"
-}, {
-  label: "Fair",
-  color: "#edc4aa"
-}, {
-  label: "Peach",
-  color: "#dca889"
-}, {
-  label: "Warm tan",
-  color: "#bd8461"
-}, {
-  label: "Olive",
-  color: "#a97452"
-}, {
-  label: "Brown",
-  color: "#875638"
-}, {
-  label: "Deep brown",
-  color: "#603b2f"
-}, {
-  label: "Rich dark",
-  color: "#3e2928"
-}, {
-  label: "Lavender",
-  color: "#c9b6e8"
-}, {
-  label: "Blue",
-  color: "#9ab9df"
-}, {
-  label: "Rose",
-  color: "#d6a4b5"
-}, {
-  label: "Mint",
-  color: "#a9c8b9"
-}];
-const swatchContainer = document.querySelector("#skin-swatches");
-for (const preset of skinPresets) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "swatch skin-swatch";
-  button.style.setProperty("--swatch", preset.color);
-  button.dataset.color = preset.color;
-  button.setAttribute("aria-label", preset.label);
-  button.setAttribute("aria-pressed", "false");
-  button.addEventListener("click", () => {
-    customLook.skinTone = preset.color;
-    updateControlState();
-    persistLook();
-  });
-  swatchContainer.append(button);
+
+function createChoiceButtons(container, presets) {
+  for (const preset of presets) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "choice-button";
+    button.dataset.value = preset.id;
+    button.textContent = preset.label;
+    container.append(button);
+  }
+}
+createChoiceButtons(document.querySelector("#hairstyle-choices"), HAIRSTYLE_PRESETS);
+
+function createSwatches(container, presets, type) {
+  for (const preset of presets) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "swatch";
+    button.dataset.color = preset.color;
+    button.dataset.swatchType = type;
+    button.style.setProperty("--swatch", preset.color);
+    button.setAttribute("aria-label", preset.name);
+    button.title = preset.name;
+    button.setAttribute("aria-pressed", "false");
+    button.addEventListener("click", () => {
+      const key = type === "hair" ? "hairColor" : "skinTone";
+      customLook[key] = preset.color;
+      updateControlState();
+      persistLook();
+    });
+    container.append(button);
+  }
+}
+createSwatches(document.querySelector("#hair-swatches"), HAIR_COLOR_PRESETS, "hair");
+createSwatches(document.querySelector("#skin-swatches"), SKIN_TONE_PRESETS, "skin");
+
+function persistLook() {
+  customLook.name = nameInput.value.slice(0, 16).trim();
+  customLook = saveCustomLook(customLook);
+  applyCustomLook(customFigure, customLook);
+  updateControlState();
+  if (selectedCharacter === "create") refreshStatus();
 }
 updateControlState();
 for (const group of document.querySelectorAll("[data-choice-group]")) {
   group.addEventListener("click", (event) => {
     const button = event.target.closest("[data-value]");
     if (!button) return;
-    const key = group.dataset.choiceGroup;
-    customLook[key] = button.dataset.value;
-    updateControlState();
+    customLook[group.dataset.choiceGroup] = button.dataset.value;
     persistLook();
   });
 }
@@ -276,25 +261,25 @@ for (const [id, key] of [
   ]) {
   document.getElementById(id).addEventListener("input", (event) => {
     customLook[key] = event.target.value;
-    updateControlState();
     persistLook();
   });
 }
 nameInput.addEventListener("input", () => {
   customLook.name = nameInput.value.slice(0, 16);
   saveCustomLook(customLook);
-  if (selectedCharacter === "create") setStatus(statusForSelection());
+  if (selectedCharacter === "create") refreshStatus();
 });
+nameInput.addEventListener("change", persistLook);
 document.querySelector("#randomize").addEventListener("click", () => {
   customLook = randomCustomLook(customLook.name);
-  updateControlState();
+  nameInput.value = customLook.name;
   persistLook();
 });
 document.querySelector("#reset-look").addEventListener("click", () => {
   customLook = {
     ...DEFAULT_CUSTOM_LOOK
   };
-  updateControlState();
+  nameInput.value = customLook.name;
   persistLook();
 });
 
@@ -315,7 +300,7 @@ function setSelectedCharacter(character) {
   echo7.visible = !showingCustom;
   customFigure.visible = showingCustom;
   if (vrmWrapper) vrmWrapper.visible = false;
-  characterButtons.forEach((button) => {
+  for (const button of characterButtons) {
     const selected = button.dataset.character === character;
     button.setAttribute("aria-pressed", selected ? "true" : "false");
     const note = button.querySelector(".character-note");
@@ -326,29 +311,31 @@ function setSelectedCharacter(character) {
       note.textContent = selected ? "Selected" : (button.dataset.character === "create" ? "Customize" : "");
       button.classList.remove("coming-soon");
     }
-  });
-  editor.hidden = !showingCustom;
-  editor.style.display = showingCustom ? "" : "none";
-  if (showingCustom) {
+  }
+  const visible = showingCustom;
+  editor.dataset.visible = visible ? "true" : "false";
+  editor.setAttribute("aria-hidden", visible ? "false" : "true");
+  if (visible) {
     const wide = window.matchMedia("(min-width: 700px)").matches;
     setEditorExpanded(wide ? true : editorExpanded);
   } else {
     setEditorExpanded(false);
   }
   window.clearTimeout(statusTimer);
-  setStatus(statusForSelection());
+  refreshStatus();
   try {
     localStorage.setItem("fractured-grid-selected-character", character);
   } catch {
-    /* Storage may be blocked; the current session still works. */ }
+    /* Storage may be blocked; the current session still works. */
+  }
 }
 for (const button of characterButtons) {
   button.addEventListener("click", () => {
     const character = button.dataset.character;
     if (character === "trynix") {
       window.clearTimeout(statusTimer);
-      setStatus("Coming soon");
-      statusTimer = window.setTimeout(() => setStatus(statusForSelection()), 1200);
+      status.textContent = "Coming soon";
+      statusTimer = window.setTimeout(refreshStatus, 1200);
       return;
     }
     setSelectedCharacter(character);
@@ -373,17 +360,17 @@ async function loadVrmFromQuery() {
   const vrmUrl = new URLSearchParams(window.location.search).get("vrm");
   if (!vrmUrl) return;
   try {
-    setStatus("Loading character");
+    status.textContent = "Loading character";
     const loader = new GLTFLoader();
     loader.register((parser) => new VRMLoaderPlugin(parser));
     const gltf = await loader.loadAsync(vrmUrl);
     currentVrm = gltf.userData.vrm;
     if (!currentVrm) throw new Error("The file did not contain a VRM avatar.");
     fitVrm(currentVrm);
-    setStatus(statusForSelection());
+    refreshStatus();
   } catch (error) {
     console.warn("Could not load the VRM model:", error);
-    setStatus(statusForSelection());
+    refreshStatus();
   }
 }
 const remembered = (() => {
@@ -393,18 +380,15 @@ const remembered = (() => {
     return null;
   }
 })();
-const startupCharacter = remembered === "create" ? "create" : "echo7";
-setSelectedCharacter(startupCharacter);
+setSelectedCharacter(remembered === "create" ? "create" : "echo7");
 await loadVrmFromQuery();
 const clock = new THREE.Clock();
 const initialY = characterRoot.position.y;
 
 function resize() {
-  const width = window.innerWidth;
-  const height = window.innerHeight;
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.setSize(width, height, false);
-  camera.aspect = width / height;
+  renderer.setSize(window.innerWidth, window.innerHeight, false);
+  camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
 }
 window.addEventListener("resize", resize, {
@@ -416,7 +400,7 @@ function animate() {
   requestAnimationFrame(animate);
   const delta = Math.min(clock.getDelta(), 0.05);
   const time = clock.elapsedTime;
-  if (currentVrm) currentVrm.update(delta);
+  if (currentVrm && vrmWrapper?.visible) currentVrm.update(delta);
   const visibleFigure = selectedCharacter === "create" ? customFigure : echo7;
   characterRoot.position.y = initialY + Math.sin(time * 1.5) * 0.018;
   visibleFigure.rotation.y = Math.sin(time * 0.55) * 0.018;

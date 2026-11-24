@@ -65,7 +65,7 @@
       align-items: center;
       gap: 7px;
       pointer-events: none;
-      transition: opacity .2s ease;
+      transition: bottom .2s ease;
     }
 
     .character-select {
@@ -168,7 +168,7 @@
       pointer-events: auto;
     }
 
-    .editor-panel:not([hidden]) {
+    .editor-panel[data-visible="true"] {
       display: flex;
     }
 
@@ -176,9 +176,6 @@
       display: none;
     }
 
-    .editor-panel[data-open="false"] .editor-header {
-      border-bottom-color: transparent;
-    }
 
     .editor-header {
       min-height: 48px;
@@ -198,7 +195,8 @@
     }
 
     .editor-button {
-      min-height: 40px;
+      min-width: 76px;
+      min-height: 44px;
       padding: 7px 13px;
       border: 1px solid rgba(221, 201, 255, .23);
       border-radius: 12px;
@@ -261,13 +259,28 @@
     .swatches,
     .actions {
       display: flex;
-      flex-wrap: wrap;
       align-items: center;
       gap: 6px;
     }
 
+    .choices {
+      flex-wrap: wrap;
+    }
+
+    .choices.scroll-row,
+    .swatches.scroll-row {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding: 3px 2px 6px;
+      scrollbar-width: thin;
+      overscroll-behavior-x: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
     .choice-button {
-      min-height: 40px;
+      flex: 0 0 auto;
+      min-width: 48px;
+      min-height: 44px;
       padding: 7px 10px;
       border: 1px solid rgba(221, 201, 255, .17);
       border-radius: 11px;
@@ -280,11 +293,12 @@
     }
 
     .swatch {
-      width: 36px;
-      height: 36px;
-      min-height: 36px;
+      flex: 0 0 44px;
+      width: 44px;
+      height: 44px;
+      min-height: 44px;
       padding: 0;
-      border: 2px solid rgba(255, 255, 255, .23);
+      border: 2px solid rgba(255, 255, 255, .27);
       border-radius: 50%;
       background: var(--swatch);
       cursor: pointer;
@@ -299,11 +313,18 @@
       display: flex;
       align-items: center;
       gap: 9px;
+      min-width: 0;
+    }
+
+    .color-row .swatches {
+      min-width: 0;
+      flex: 1;
     }
 
     .color-input {
+      flex: 0 0 48px;
       width: 48px;
-      height: 42px;
+      height: 44px;
       padding: 3px;
       border: 1px solid rgba(221, 201, 255, .2);
       border-radius: 10px;
@@ -415,7 +436,7 @@
       }
 
       .editor-panel[data-open="false"] {
-        top: auto;
+        bottom: auto;
         height: auto;
       }
 
@@ -437,10 +458,6 @@
         grid-column: auto;
       }
 
-      .swatch {
-        width: 38px;
-        height: 38px;
-      }
     }
 
   </style>
@@ -453,18 +470,23 @@
     <nav class="character-select" aria-label="Character selection"> <button class="character-button" type="button" data-character="echo7" aria-pressed="true"> <span class="character-name">ECHO-7</span> <span class="character-note">Selected</span> </button> <button class="character-button coming-soon" type="button" data-character="trynix" aria-pressed="false"> <span class="character-name">Trynix</span> <span class="character-note">Coming soon</span> </button> <button class="character-button" type="button" data-character="create" aria-pressed="false"> <span class="character-name">Create Your Own</span> <span class="character-note">Customize</span> </button> </nav>
     <div class="hint" id="hint">Drag to spin · pinch or scroll to zoom</div>
   </div>
-  <section class="editor-panel" id="editor-panel" aria-label="Character editor" data-open="false" hidden>
+  <section class="editor-panel" id="editor-panel" aria-label="Character editor" data-visible="false" data-open="false">
     <header class="editor-header">
       <h2 class="editor-title">Customize character</h2> <button class="editor-button" type="button" id="editor-toggle" aria-expanded="false">Customize</button>
     </header>
     <div class="editor-body" id="editor-body">
       <div class="control-grid"> <label class="control full"> <span class="control-label">Character name</span> <input class="text-input" id="name-input" type="text" maxlength="16" autocomplete="off" placeholder="Custom"> </label>
         <div class="control full"> <span class="control-label">Hairstyle</span>
-          <div class="choices" data-choice-group="hairstyle"> <button class="choice-button" type="button" data-value="crop">Crop</button> <button class="choice-button" type="button" data-value="long">Long</button> <button class="choice-button" type="button" data-value="ponytail">Ponytail</button> <button class="choice-button" type="button" data-value="spiky">Spiky</button> </div>
-        </div> <label class="control"> <span class="control-label">Hair color</span> <input class="color-input" id="hair-color" type="color" aria-label="Hair color"> </label> <label class="control"> <span class="control-label">Eye color</span> <input class="color-input" id="eye-color" type="color" aria-label="Eye color"> </label>
+          <div class="choices scroll-row" data-choice-group="hairstyle" id="hairstyle-choices"></div>
+        </div>
+        <label class="control full"> <span class="control-label">Hair color</span>
+          <div class="color-row">
+            <div class="swatches scroll-row" id="hair-swatches" aria-label="Hair color presets"></div> <input class="color-input" id="hair-color" type="color" aria-label="Custom hair color">
+          </div>
+        </label> <label class="control"> <span class="control-label">Eye color</span> <input class="color-input" id="eye-color" type="color" aria-label="Eye color"> </label>
         <div class="control full"> <span class="control-label">Skin tone</span>
           <div class="color-row">
-            <div class="swatches" id="skin-swatches" aria-label="Skin tone presets"></div> <input class="color-input" id="skin-color" type="color" aria-label="Custom skin tone">
+            <div class="swatches scroll-row" id="skin-swatches" aria-label="Skin tone presets"></div> <input class="color-input" id="skin-color" type="color" aria-label="Custom skin tone">
           </div>
         </div>
         <div class="control full"> <span class="control-label">Outfit</span>
