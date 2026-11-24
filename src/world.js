@@ -363,7 +363,7 @@ export function createWorld({
     forward.set(controls.target.x - camera.position.x, 0, controls.target.z - camera.position.z);
     if (forward.lengthSq() < 0.001) forward.set(0, 0, -1);
     forward.normalize();
-    right.set(forward.z, 0, -forward.x).normalize();
+    right.set(-forward.z, 0, forward.x).normalize();
     const run = keys.has("shift") || (joystickPointer !== null && inputLength > 0.7);
     const speed = run ? 6.3 : 3.7;
     if (moving) {
